@@ -1,0 +1,14 @@
+{
+  "name": "mo",
+  "owner": {
+    "name": "Muhammad Olim",
+    "url": "https://github.com/muhammadolim"
+  },
+  "plugins": [
+    {
+      "name": "flow",
+      "source": "./flow",
+      "description": "Git workflow skills: commit, pr, review-pr, merge-pr"
+    }
+  ]
+}
