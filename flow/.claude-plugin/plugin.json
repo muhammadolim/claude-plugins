@@ -1,7 +1,7 @@
 {
   "name": "flow",
   "description": "Git workflow: commit, open/update PRs, review, and merge — repo-agnostic",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "Muhammad Olim",
     "url": "https://github.com/muhammadolim"

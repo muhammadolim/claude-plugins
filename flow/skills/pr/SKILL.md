@@ -7,7 +7,7 @@ description: Push the current branch and create or update its PR. Invoke when th
 
 ## Input
 
-`$ARGUMENTS` — optional. `only` = skip the auto-review in step 6. Anything else is passed through to `/review-pr` as effort level and/or review focus. Always operates on the current branch.
+`$ARGUMENTS` — optional. `only` = skip the auto-review in step 6. Anything else is passed through to `/flow:review-pr` as effort level and/or review focus. Always operates on the current branch.
 
 ## Context-aware shortcuts
 
@@ -17,7 +17,7 @@ description: Push the current branch and create or update its PR. Invoke when th
 ## Steps
 
 1. **Pre-checks**:
-   - `git status -sb`. Uncommitted changes → invoke the `/commit` skill to stage and commit them, then continue. `/commit` owns staging, scope, the comment audit, and branch create/rename — never inline a bare `git add -A` commit here.
+   - `git status -sb`. Uncommitted changes → invoke the `/flow:commit` skill to stage and commit them, then continue. `/flow:commit` owns staging, scope, the comment audit, and branch create/rename — never inline a bare `git add -A` commit here.
    - After committing: on `dev`/`main`/`master` or no commits ahead of `dev` → abort.
 
 2. **Sync with dev**: `git pull --rebase origin dev`. Real conflicts → abort and report.
@@ -31,7 +31,7 @@ description: Push the current branch and create or update its PR. Invoke when th
 
 5. **Return** the PR URL.
 
-6. **Review**: if `$ARGUMENTS` is `only`, skip. Otherwise invoke `/review-pr` with the PR number from step 4, appending `$ARGUMENTS` if present.
+6. **Review**: if `$ARGUMENTS` is `only`, skip. Otherwise invoke `/flow:review-pr` with the PR number from step 4, appending `$ARGUMENTS` if present.
 
 ## Title and body
 
