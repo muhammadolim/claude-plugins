@@ -8,7 +8,7 @@
     {
       "name": "flow",
       "source": "./flow",
-      "description": "Git + GitHub workflow skills: commit, pr, review-pr, merge-pr, issue"
+      "description": "Git + GitHub workflow skills: commit, pr, review-pr, merge-pr, issue, release"
     }
   ]
 }
