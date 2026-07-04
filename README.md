@@ -15,6 +15,7 @@ Repo-agnostic git workflow skills:
 | review-pr | `/flow:review-pr` | Find issues (via `code-review`), fix, verify, comment |
 | merge-pr | `/flow:merge-pr` | Squash-merge and detach the worktree |
 | issue | `/flow:issue` | File a GitHub issue in the current repo (or a mapped sibling repo) |
+| release | `/flow:release` | Draft/update the release PR (dev → main/master), grouped changelog, flags migrations |
 
 `review-pr` reads the PR verify command from the repo's `CLAUDE.md` / `CLAUDE.local.md` (falls back to detecting `typecheck` → `build` → `tsc --noEmit`), so it adapts per project.
 
