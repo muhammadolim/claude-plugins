@@ -1,6 +1,6 @@
 ---
 name: release
-description: Create a release PR from the integration branch (dev) to the repo's production branch (main or master) with a grouped, user-facing changelog. Invoke when the user runs /release or asks to cut, ship, or draft a release, or to deploy/promote to production. Auto-detects the production branch and flags any migration/backfill/seed scripts in the release range.
+description: Create a release PR from the integration branch (dev) to the repo's production branch (main or master) with a grouped, user-facing changelog. Invoke when the user runs /release or asks to cut, ship, or draft a release, or to deploy/promote to production. Auto-detects the production branch and flags any data-migration scripts in the release range by inspecting the changed scripts, not just their names.
 ---
 
 # Release PR
@@ -15,7 +15,9 @@ Flow releases `dev` → the repo's **production branch**. That branch differs by
 2. **Fetch & diff** — run the fetches in parallel, then log:
    - `git fetch origin <base>` + `git fetch origin dev` (parallel)
    - `git log --oneline origin/<base>..origin/dev`
-   - `git diff --name-only origin/<base>..origin/dev | grep -iE 'migrat|backfill|seed'` — flag migration scripts
+   - **Migrations — list files, don't name-grep.** One-off migrations live in `scripts/` (or `migrations/`) and are named for what they *do* (`drop-…`, `normalize-…`, `fix-…`, `reconcile-…`), so a name grep misses them. List every changed script, then open each new/changed one's docblock and decide whether it needs a manual prod run:
+     - `git diff --name-only origin/<base>..origin/dev -- 'scripts/**' 'migrations/**' 'db/migrations/**'`
+     - A name grep (`grep -iE 'migrat|backfill|seed|drop|normaliz|reconcile|dedupe'`) is a hint to skim first, never the gate — a script that matches nothing can still be a migration.
 
 3. **Look for an existing release PR**:
    ```
@@ -50,7 +52,8 @@ Flow releases `dev` → the repo's **production branch**. That branch differs by
 
 - Title: `Release YYYY-MM-DD` (today's date)
 - Body: `## Summary` with bullets grouped by feature area using bold headers (e.g. `- **Meetings:** ...`). Combine related commits into one bullet per area
-- If the diff includes migration/backfill/seed scripts, append a `## ⚠️ Migrations` section after the summary: list each script with its run command; note they run manually against production, not on deploy
+- If the release includes any data-migration script, append a `## ⚠️ Migrations` section after the summary: list each with its exact run command (read the command from the script's docblock, don't guess); note they run manually against production, not on deploy
+- Never let the filename grep be the sole gate for migrations — every changed file under `scripts/`/`migrations/` is a candidate; read its docblock and classify before finalizing the body
 - Descriptions are user-facing — say what changed for the user, not how. No internal names (PATCH, slice, slug, optimistic, ref, hook), no file/type names, no implementation mechanics. One short phrase per change, comma-separated within an area
 - No PR number references (no `(#123)`, no links) in the body — description only
 - No test plan, no `Generated with Claude Code` footer
