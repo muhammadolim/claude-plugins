@@ -37,11 +37,20 @@ $ARGUMENTS — optional target (a PR number, `owner/repo#N`, or a PR URL), optio
    - Full mode: ensure `<worktree>` is on the PR head. Already at `headRefOid` (common when the PR was created from this session's `<worktree>`) → use as-is. Otherwise fetch + checkout the branch in `<worktree>` (`gh pr checkout <N> -R <slug>` when `<worktree>` is the cwd, else `git -C <worktree>` fetch/checkout). Working tree dirty with unrelated changes → stop and surface them; don't stash or discard. Can't get `<worktree>` onto the head → drop to review-only.
    - Review-only mode: nothing to check out; the finder reads `gh pr diff <N> -R <slug>`. Skip steps 4–8; in step 9 post every finding as an inline comment with the review-only summary (format in Notes).
 
-3. **Find issues** — invoke the `code-review` skill via the Skill tool. The finder reads the cwd's working tree, so pick the target by where `<worktree>` is:
-   - `<worktree>` == cwd → `<effort> <N> — only flag changed code` (reviews the checked-out branch).
-   - `<worktree>` is a sibling path, or review-only → `<effort> <url> — only flag changed code` (the PR URL is a cwd-independent target `gh` reads from its diff). Fixes still land in `<worktree>` — only the *finder* is diff-based here.
-   - Append any free-form review focus from $ARGUMENTS. Never pass `--fix` or `--comment`.
-   - Sanity-check that the returned findings reference files present in the PR diff; if they clearly don't, the finder reviewed the wrong tree — stop and report, don't post.
+3. **Find issues.** Try the built-in `code-review` skill first; fall back to a subagent panel when it refuses to launch.
+   - **Target args** — the finder reads the cwd's working tree, so pick by where `<worktree>` is:
+     - `<worktree>` == cwd → `<effort> <N> — only flag changed code` (reviews the checked-out branch).
+     - `<worktree>` is a sibling path, or review-only → `<effort> <url> — only flag changed code` (the PR URL is a cwd-independent target `gh` reads from its diff). Fixes still land in `<worktree>` — only the *finder* is diff-based here.
+     - Append any free-form review focus from $ARGUMENTS. Never pass `--fix` or `--comment`.
+   - **Primary:** invoke `code-review` via the Skill tool with those args.
+   - **Fallback:** current Claude Code builds ship `code-review` as user-invocation-only, so the Skill call fails with `disable-model-invocation`. On that error — or any other launch failure — run the panel below and say which finder ran in the step 9 summary. A failed launch is never "no findings", and never a reason to shell out to `/code-review`.
+     - Capture the diff: `<worktree>` == cwd → `git -C <worktree> diff origin/<baseRefName>...HEAD`; otherwise `gh pr diff <N> -R <slug>`.
+     - Spawn reviewers with the Agent tool, all in ONE message so they run concurrently, `run_in_background: false`. Fan-out by effort: `low`/`medium` → 1, `high` → 3, `xhigh`/`max` → 5.
+     - Dimensions in priority order — **correctness** (logic errors, null/undefined, off-by-one, wrong state, async races), **integration** (call sites, contracts, and data shapes the change assumes), **reuse & simplification** (duplicated logic, an existing helper ignored, dead code), then **edge cases** and **performance** once the fan-out allows.
+     - Give each reviewer the diff, the base and head refs, `<worktree>` so it can read surrounding code, and the instruction to flag ONLY changed lines.
+     - Require this shape back: `[{file, line, category, verdict, summary, failure_scenario}]`, `verdict` being `CONFIRMED` only when the reviewer traced the failing path in real code and `PLAUSIBLE` for anything reasoned but unproven — steps 4–6 route on that distinction. Empty array when clean.
+     - Merge the panels, drop duplicates on (file, line, claim), rank most severe first.
+   - Sanity-check that findings reference files present in the PR diff; if they clearly don't, the finder reviewed the wrong tree — stop and report, don't post.
 
 4. **Classify each finding** (full mode; review-only skips to step 9):
    - **Auto-fix**: CONFIRMED bugs and reuse/simplification/efficiency cleanups — only when the fix stays inside the reviewed diff.
