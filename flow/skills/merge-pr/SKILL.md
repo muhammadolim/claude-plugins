@@ -9,19 +9,17 @@ description: Merge a pull request immediately and detach the local worktree. Inv
 
 $ARGUMENTS — optional PR number. If omitted, use the current branch's open PR.
 
-## Context-aware shortcut
-
-If the PR number is already known from earlier this session, skip step 1.
-
 ## Steps
 
-1. **Resolve PR number**:
-   - Argument given → use it
-   - No argument → `gh pr view --json number` for current branch
-   - Still none → ask the user
+1. Resolve PR number: argument → use it; else `gh pr view --json number`; else ask. Skip if already known this session.
 
-2. **Merge**: `gh pr merge <number> --squash --delete-branch`
+2. Capture the branch: `gh pr view <number> --json headRefName -q .headRefName`.
 
-3. **Close linked issue if done**: when this PR clears the last open item of a linked issue (`#N` / `Part of #N`), close it: `gh issue close <N> --comment "<merged PRs>"`. Judge "done" from session context; `gh issue view <N>` only when unsure.
+3. Merge: `gh pr merge <number> --squash`.
 
-4. **Cleanup**: `git fetch origin dev && git checkout --detach origin/dev`
+4. Close linked issue if this PR clears the last open item of a linked issue (`#N` / `Part of #N`): `gh issue close <N> --comment "<merged PRs>"`. `gh issue view <N>` only when unsure.
+
+5. Cleanup, in order:
+   - `git fetch origin dev && git checkout --detach origin/dev`
+   - `git push origin --delete <branch>`
+   - `git branch -D <branch>`
